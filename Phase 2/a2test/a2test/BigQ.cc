@@ -24,6 +24,41 @@ BigQ :: BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen) {
 	out.ShutDown ();
 }
 
+BigQ::quicksort(std::vector<Record> &rb, int left, int right){  
+
+	int i = left;
+	int j = right;
+
+   Record* pivot = rb.at((left+right)/2);
+  
+   // partition  
+   while (i <= j) {  
+       while (compare(rb.at(i),pivot,sortorder)<0)
+           i++;  
+  
+       while (compare(rb.at(j),pivot,sortorder)>0)
+           j--;  
+  
+       if (i <= j) {  
+           Record tmp = rb.at(i);  
+           rb.at(i) = rb.at(j);  
+           rb.at(j) = tmp;  
+  
+           i++;  
+           j--;  
+       }  
+   }  
+  
+   // recursion  ?
+   if (left < j)  
+       quickSort(rb, left, j);  
+  
+   if (i < right)  
+       quickSort(rb, i, right);  
+}  
+
+
+
 BigQ::void* TPMMS_Phase1(void* arg){
 	/*
 	Pipe *input;
@@ -70,8 +105,10 @@ BigQ::void* TPMMS_Phase1(void* arg){
 				
 				//quick sort record buffer array
 				
-				
+				quicksort(record_Buffer,0,record_Buffer.size(), args->sort_order);
 
+				// record buffer should be sorted now
+				
 				//new File
 				args->(*run_buffer)[++num_runs] = new File();  //create new run file
 				char *actual_path;
@@ -86,6 +123,29 @@ BigQ::void* TPMMS_Phase1(void* arg){
 				args->(*buf)[page_Index]->append(args->temporary);
 				//code for writing out the run and empting the page buffer
 				//USE FILE OBJECT??
+				
+				Page* ptemp = new Page();
+				int j=0;
+				int page_index_runs = 0;
+				while(true){
+					Record* t = record_Buffer.at(j);
+					if(ptemp->append(t)!=0)
+					{	
+						j++;
+					}
+					else{
+						if(j==record_Buffer.size()-1){
+							args->(*buff)[num_runs-1]->AddPage(ptemp,page_index_runs++); // add current page to file and increment the index
+							ptemp->EmptyItOut();
+							ptemp->append(record_Buffer.at(j++));			
+						}
+						else{
+							// last record in vector
+							args->(*buff)[num_runs-1]->close();
+						
+						}
+				}
+			
 			} // page index out of bound
 
 			page_Index = 1;//reset page index

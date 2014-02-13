@@ -41,7 +41,8 @@ class BigQ {
 
 	void* TPMMS_Phase1(void* arg);
 	void* TPMMS_Phase2(void* arg);
-
+	BigQ::quicksort(std::vector<int> &rb);
+	
 public:
 
 	BigQ (Pipe &in, Pipe &out, OrderMaker &sortorder, int runlen);
